@@ -51,5 +51,37 @@ function createAsset(filename) {
   };
 }
 
-const res = createAsset("../entry/index.js");
+/**
+ * 2. 从入口文件开始构建依赖图（dependency graph）
+ */
+function createGraph(entry) {
+  // 入口文件的第一层依赖
+  const mainAsset = createAsset(entry);
+
+  // console.log(mainAsset);
+
+  const queue = [mainAsset];
+
+  // 广度优先（BFS）将所有的依赖项放入 queue
+  for (const asset of queue) {
+    asset.mapping = {};
+
+    // 当前模块所在的文件目录
+    const dirname = path.dirname(asset.filename);
+
+    asset.dependencies.forEach((relativePath) => {
+      const absolutePath = path.join(dirname, relativePath);
+      const child = createAsset(absolutePath);
+
+      // 将当前模块依赖项的相对路径和创建好了的依赖项实体一一对应起来
+      asset.mapping[relativePath] = child.id;
+
+      queue.push(child);
+    });
+  }
+
+  return queue;
+}
+
+const res = createGraph("../entry/index.js");
 console.log(res);
