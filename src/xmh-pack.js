@@ -83,5 +83,20 @@ function createGraph(entry) {
   return queue;
 }
 
-const res = createGraph("../entry/index.js");
-console.log(res);
+/**
+ * 3. 根据依赖图构建一个能够在浏览器环境中运行的 js bundle
+ */
+function bundle(graph) {
+  let modules = "";
+
+  /**
+   * 为了保证不污染全局变量，将代码放在 IIFE 中
+   */
+  const result = `(function(){})()`;
+
+  return result;
+}
+
+const graph = createGraph("../entry/index.js");
+const result = bundle(graph);
+console.log(result);
