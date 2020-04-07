@@ -89,10 +89,45 @@ function createGraph(entry) {
 function bundle(graph) {
   let modules = "";
 
+  // console.log(graph);
+
   /**
-   * 为了保证不污染全局变量，将代码放在 IIFE 中
+   * 1. 为了命名空间的独立，需要将每个模块的代码放在一个独立的函数中
+   * 2. 转译后的代码用的是 CommonJs 模块系统，需要注入 require, module, exports 对象
+   * 3. 转译后的代码中会调用 require() 函数且参数为相对路径，需要 mapping 回具体的 module
    */
-  const result = `(function(){})()`;
+  graph.forEach((mod) => {
+    modules += `${mod.id}: [
+      function(require, module, exports){
+        ${mod.code}
+      },
+      ${JSON.stringify(mod.mapping)},
+    ],`;
+  });
+  /**
+   * 1. 为了保证不污染全局变量，将代码放在 IIFE 中
+   * 2. 将依赖图的信息作为参数传进去
+   * 3. require(0) 加载入口模块
+   */
+  const result = `
+    (function(modules){
+      function require(id) {
+        const [fn, mapping] = modules[id];
+
+        function localRequire(name) {
+          return require(mapping[name]);
+        }
+  
+        const module = { exports: {} };
+
+        fn(localRequire, module, module.exports);
+
+        return module.exports;
+      }
+
+      require(0);
+    })({${modules}})
+  `;
 
   return result;
 }
